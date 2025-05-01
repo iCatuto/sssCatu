@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ssscatu</title>  <!-- Título de la página -->
+  <link rel="icon" href="https://www.google.com/favicon.ico"> <!-- Favicon -->
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+    input, button {
+      font-size: 16px;
+      padding: 10px;
+      margin-top: 10px;
+      width: 100%;
+      max-width: 400px;
+    }
+    #estado {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2 style="text-align: center;">Descargar Video</h2>
+  <input type="text" id="url" placeholder="Pega el enlace del video aquí">
+  <button onclick="enviar()">Enviar al servidor</button>
+  <p id="estado"></p>
+
+  <script>
+    function enviar() {
+      const url = document.getElementById('url').value;
+      const estado = document.getElementById('estado');
+      estado.innerText = 'Enviando...';
+
+      fetch('https://ssscatu.onrender.com/download', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ url })
+      })
+      .then(res => res.json())
+      .then(data => {
+        estado.innerText = data.success || data.error;
+      })
+      .catch(err => {
+        estado.innerText = 'Error de red o conexión';
+      });
+    }
+  </script>
+</body>
+</html>
