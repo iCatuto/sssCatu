@@ -2,15 +2,16 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ssscatu</title>  <!-- Título de la página -->
-  <link rel="icon" href="https://www.google.com/favicon.ico"> <!-- Favicon -->
-
   <style>
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
       background: #f4f4f4;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 30px;
     }
     input, button {
       font-size: 16px;
@@ -26,7 +27,7 @@
   </style>
 </head>
 <body>
-  <h2 style="text-align: center;">Descargar Video</h2>
+  <h1>ssscatu</h1>
   <input type="text" id="url" placeholder="Pega el enlace del video aquí">
   <button onclick="enviar()">Enviar al servidor</button>
   <p id="estado"></p>
@@ -37,7 +38,8 @@
       const estado = document.getElementById('estado');
       estado.innerText = 'Enviando...';
 
-      fetch('https://ssscatu.onrender.com/download', {
+      // Cambia la URL local por la URL de tu servidor en la nube
+      fetch('https://ssscatu.onrender.com/download', {  // Cambia esta URL por tu URL de servidor en la nube
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
