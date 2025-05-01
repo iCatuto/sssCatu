@@ -3,6 +3,5 @@ services:
     name: ssscatu
     env: python
     buildCommand: ""
-    startCommand: gunicorn app:app --timeout 120
+    startCommand: python app.py
     plan: free
-
