@@ -28,5 +28,8 @@ def download():
     except Exception as e:
         return jsonify({'error': f'Error al descargar: {str(e)}'}), 500
 
+@app.route('/')
+def inicio():
+    return 'Servidor Flask funcionando: usa /download para enviar URLs.'
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
