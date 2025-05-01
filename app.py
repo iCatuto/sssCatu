@@ -67,7 +67,7 @@ def inicio():
     </html>
     '''
 
-@app.route('/download', methods=['POST'])
+@app.route('downloads', methods=['POST'])
 def download():
     url = request.json.get('url')
     if not url:
