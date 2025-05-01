@@ -42,11 +42,13 @@ def inicio():
       <input type="text" id="url" placeholder="Pega el enlace del video aquí">
       <button onclick="enviar()">Enviar al servidor</button>
       <p id="estado"></p>
+
       <script>
         function enviar() {
           const url = document.getElementById('url').value;
           const estado = document.getElementById('estado');
           estado.innerText = 'Enviando...';
+
           fetch('/download', {
             method: 'POST',
             headers: {
@@ -67,13 +69,13 @@ def inicio():
     </html>
     '''
 
-@app.route('downloads', methods=['POST'])
+@app.route('/download', methods=['POST'])
 def download():
     url = request.json.get('url')
     if not url:
         return jsonify({'error': 'No se proporcionó URL'}), 400
 
-    carpeta = "/videos"  # Usa /tmp si estás en Render
+    carpeta = os.path.join(os.getcwd(), 'videos')
     os.makedirs(carpeta, exist_ok=True)
 
     try:
