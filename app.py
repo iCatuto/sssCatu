@@ -1,4 +1,4 @@
-@app.route('/download', methods=['POST'])
+@app.route('/videos', methods=['POST'])
 def download():
     try:
         url = request.json.get('url')
