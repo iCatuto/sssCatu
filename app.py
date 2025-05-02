@@ -1,13 +1,14 @@
 import os
 import subprocess
 import uuid
-from flask import Flask, request, jsonify, render_template
+import glob
+from flask import Flask, request, jsonify, send_file, render_template
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
 
-# Ruta a la carpeta de descargas
+# Carpeta para guardar archivos
 DOWNLOAD_FOLDER = os.path.join(os.getcwd(), 'storage')
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
@@ -23,21 +24,28 @@ def descarga():
     if not url or not tipo:
         return jsonify({'error': 'Faltan datos'}), 400
 
-    filename = str(uuid.uuid4())
-    output_path = os.path.join(DOWNLOAD_FOLDER, f"{filename}.%(ext)s")
-
     try:
+        # Limpiar carpeta antes de cada descarga
+        for f in os.listdir(DOWNLOAD_FOLDER):
+            os.remove(os.path.join(DOWNLOAD_FOLDER, f))
+
         if tipo == 'musica':
-            cmd = ['spotdl', 'download', url, '--output', DOWNLOAD_FOLDER]
+            cmd = ['spotdl', url, '--output', DOWNLOAD_FOLDER]
         else:
-            cmd = ['yt-dlp', '-o', output_path, url]
+            cmd = ['yt-dlp', '-P', DOWNLOAD_FOLDER, url]
 
         result = subprocess.run(cmd, capture_output=True, text=True)
 
         if result.returncode != 0:
             return jsonify({'error': result.stderr}), 500
 
-        return jsonify({'mensaje': 'Descarga completada'}), 200
+        # Buscar archivos descargados
+        archivos = glob.glob(os.path.join(DOWNLOAD_FOLDER, '*'))
+        if not archivos:
+            return jsonify({'error': 'No se encontró el archivo'}), 500
+
+        return send_file(archivos[0], as_attachment=True)
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
