@@ -1,62 +1,42 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>sssCatu</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #111;
-            color: #fff;
-            text-align: center;
-            padding: 40px;
-        }
-        h1 {
-            font-size: 3em;
-            color: #00ffe1;
-        }
-        form {
-            margin-top: 40px;
-        }
-        input[type="text"] {
-            padding: 10px;
-            width: 80%;
-            max-width: 500px;
-            border-radius: 5px;
-            border: none;
-            font-size: 1em;
-        }
-        select, button {
-            padding: 10px 20px;
-            margin: 10px;
-            border: none;
-            border-radius: 5px;
-            font-size: 1em;
-        }
-        button {
-            background: #00ffe1;
-            color: #111;
-            cursor: pointer;
-        }
-        footer {
-            margin-top: 60px;
-            font-size: 1.2em;
-            color: #888;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Descargador Universal</title>
 </head>
 <body>
-    <h1>sssCatu</h1>
-    <form method="POST" action="/descarga">
-        <input type="text" name="url" placeholder="Pega el enlace aquí" required><br>
-        <select name="tipo">
-            <option value="video">Video</option>
-            <option value="musica">Spotify (SpotDL)</option>
-        </select><br>
-        <button type="submit">Descargar</button>
-    </form>
-    <footer>
-        hecho por Catuto
-    </footer>
+  <h1>Descargar desde múltiples plataformas</h1>
+  <form id="formulario" method="POST">
+    <input type="text" name="url" placeholder="Pega el enlace aquí" required><br><br>
+    <label>
+      <input type="radio" name="formato" value="video" checked> Video (mp4)
+    </label>
+    <label>
+      <input type="radio" name="formato" value="audio"> Audio (mp3)
+    </label><br><br>
+    <button type="submit">Descargar</button>
+  </form>
+
+  <script>
+    document.getElementById("formulario").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const form = new FormData(this);
+      const response = await fetch('/descarga', {
+        method: 'POST',
+        body: form
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = "archivo";
+        link.click();
+      } else {
+        const error = await response.json();
+        alert("Error: " + error.error);
+      }
+    });
+  </script>
 </body>
 </html>
