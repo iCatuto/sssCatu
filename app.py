@@ -1,108 +1,72 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file, render_template_string
 from flask_cors import CORS
 import os
-import yt_dlp
-import spotdl
+import subprocess
+import uuid
 
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/')
+HTML = """
+<!doctype html>
+<html>
+  <head>
+    <title>Descargador</title>
+  </head>
+  <body>
+    <h1>Descargar Video o Música</h1>
+    <form action="/descarga" method="post">
+      <input type="text" name="url" placeholder="URL del video o canción" required>
+      <select name="tipo">
+        <option value="video">Video (yt-dlp)</option>
+        <option value="musica">Música (Spotify - spotDL)</option>
+      </select>
+      <button type="submit">Descargar</button>
+    </form>
+  </body>
+</html>
+"""
+
+@app.route("/")
 def inicio():
-    return '''
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-      <meta charset="UTF-8">
-      <title>ssscatu</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          padding: 20px;
-          background: #f4f4f4;
-          text-align: center;
-        }
-        h1 {
-          margin-bottom: 30px;
-        }
-        input, button {
-          font-size: 16px;
-          padding: 10px;
-          margin-top: 10px;
-          width: 100%;
-          max-width: 400px;
-        }
-        #estado {
-          margin-top: 20px;
-          font-weight: bold;
-        }
-      </style>
-    </head>
-    <body>
-      <h1>ssscatu</h1>
-      <input type="text" id="url" placeholder="Pega el enlace del video o canción aquí">
-      <button onclick="enviar()">Enviar al servidor</button>
-      <p id="estado"></p>
+    return render_template_string(HTML)
 
-      <script>
-        function enviar() {
-          const url = document.getElementById('url').value;
-          const estado = document.getElementById('estado');
-          estado.innerText = 'Enviando...';
+@app.route("/descarga", methods=["POST"])
+def descarga():
+    url = request.form.get("url")
+    tipo = request.form.get("tipo", "video")
 
-          fetch('/download', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ url })
-          })
-          .then(res => res.json())
-          .then(data => {
-            estado.innerText = data.success || data.error;
-          })
-          .catch(err => {
-            estado.innerText = 'Error de red o conexión';
-          });
-        }
-      </script>
-    </body>
-    </html>
-    '''
-
-@app.route('/download', methods=['POST'])
-def download():
-    url = request.json.get('url')
     if not url:
-        return jsonify({'error': 'No se proporcionó URL'}), 400
+        return jsonify({"error": "Falta la URL"}), 400
 
-    carpeta = "/storage/ssscatu"
+    carpeta = os.path.join(os.getcwd(), "descargas")
     os.makedirs(carpeta, exist_ok=True)
 
+    filename = str(uuid.uuid4())
+
     try:
-        # Verificar si es un enlace de YouTube o Spotify
-        if "youtube.com" in url or "youtu.be" in url:
-            ydl_opts = {
-                'outtmpl': os.path.join(carpeta, '%(title)s.%(ext)s'),
-                'format': 'mp4',
-            }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                filename = ydl.prepare_filename(info)
-
-            return jsonify({'success': f'Video descargado: {filename}'})
-        
-        elif "spotify.com" in url:
-            # Implementar SpotDL
-            spotdl_cli = spotdl.Spotdl()
-            spotdl_cli.download(url, output_path=carpeta)
-            return jsonify({'success': 'Canción de Spotify descargada exitosamente'})
-
+        if tipo == "video":
+            output = os.path.join(carpeta, f"{filename}.%(ext)s")
+            cmd = ["yt-dlp", "-o", output, url]
+        elif tipo == "musica":
+            cmd = ["spotdl", "--output", carpeta, url]
         else:
-            return jsonify({'error': 'URL no soportada'}), 400
+            return jsonify({"error": "Tipo inválido"}), 400
+
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        if result.returncode != 0:
+            return jsonify({"error": result.stderr}), 500
+
+        archivos = os.listdir(carpeta)
+        archivos.sort(key=lambda x: os.path.getmtime(os.path.join(carpeta, x)), reverse=True)
+        ultimo = archivos[0]
+        ruta_completa = os.path.join(carpeta, ultimo)
+
+        return send_file(ruta_completa, as_attachment=True)
 
     except Exception as e:
-        return jsonify({'error': f'Error al descargar: {str(e)}'}), 500
+        return jsonify({"error": str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    app.run(debug=True)
