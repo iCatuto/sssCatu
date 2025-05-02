@@ -1,94 +1,66 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
+  <title>sssCatu</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Descargador Multimedia</title>
   <style>
     body {
+      background-color: #111;
+      color: #fff;
       font-family: Arial, sans-serif;
-      background: #f3f4f6;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 30px;
+      text-align: center;
+      margin: 0;
+      padding: 0;
     }
-    h1 {
-      color: #111827;
+    header {
+      background: #222;
+      padding: 1em;
+      font-size: 2em;
+      font-weight: bold;
     }
-    form {
-      background: #ffffff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      max-width: 500px;
-      width: 100%;
+    main {
+      margin-top: 3em;
     }
-    input, select, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 12px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      font-size: 16px;
+    input[type="text"] {
+      padding: 0.7em;
+      width: 80%;
+      max-width: 400px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
     }
     button {
-      background-color: #2563eb;
-      color: white;
-      font-weight: bold;
+      margin-top: 1em;
+      padding: 0.7em 2em;
+      font-size: 1em;
       border: none;
+      border-radius: 5px;
+      background: #00b894;
+      color: white;
       cursor: pointer;
     }
     button:hover {
-      background-color: #1d4ed8;
+      background: #019875;
     }
-    .status {
-      margin-top: 15px;
-      font-weight: bold;
+    footer {
+      margin-top: 4em;
+      font-size: 0.9em;
+      color: #aaa;
     }
   </style>
 </head>
 <body>
-  <h1>Descargar desde YouTube, TikTok o Spotify</h1>
-  <form id="downloadForm">
-    <input type="url" id="url" placeholder="Pega el enlace aquí" required>
-    <select id="plataforma">
-      <option value="youtube">YouTube / TikTok</option>
-      <option value="spotify">Spotify</option>
-    </select>
-    <button type="submit">Descargar</button>
-    <p class="status" id="status"></p>
-  </form>
-
-  <script>
-    const form = document.getElementById('downloadForm');
-    const status = document.getElementById('status');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const url = document.getElementById('url').value;
-      const plataforma = document.getElementById('plataforma').value;
-
-      status.textContent = 'Procesando...';
-
-      try {
-        const response = await fetch('/descarga', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url, plataforma })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-          status.textContent = data.mensaje || 'Descarga completada.';
-        } else {
-          status.textContent = data.error || 'Error al descargar.';
-        }
-      } catch (error) {
-        status.textContent = 'Error de conexión con el servidor.';
-      }
-    });
-  </script>
+  <header>sssCatu</header>
+  <main>
+    <form id="formulario" method="POST" action="/descarga">
+      <input type="text" name="url" placeholder="Pega tu enlace aquí..." required>
+      <br>
+      <button type="submit">Descargar</button>
+    </form>
+  </main>
+  <footer>
+    hecho por Catuto🔥
+  </footer>
 </body>
 </html>
