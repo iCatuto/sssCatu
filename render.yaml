@@ -1,7 +1,5 @@
-services:
-  - type: web
-    name: ssscatu
-    env: python
-    buildCommand: ""
-    startCommand: python app.py
-    plan: free
+type: web
+name: sssCatu
+env: python
+buildCommand: "pip install -r requirements.txt"
+startCommand: "python app.py"
