@@ -2,58 +2,93 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>ssscatu</title>  <!-- Título de la página -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Descargador Multimedia</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f4f4f4;
-      text-align: center;
+      background: #f3f4f6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
     }
     h1 {
-      margin-bottom: 30px;
+      color: #111827;
     }
-    input, button {
-      font-size: 16px;
-      padding: 10px;
-      margin-top: 10px;
+    form {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 500px;
       width: 100%;
-      max-width: 400px;
     }
-    #estado {
-      margin-top: 20px;
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 12px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 16px;
+    }
+    button {
+      background-color: #2563eb;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    .status {
+      margin-top: 15px;
       font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <h1>ssscatu</h1>
-  <input type="text" id="url" placeholder="Pega el enlace del video aquí">
-  <button onclick="enviar()">Enviar al servidor</button>
-  <p id="estado"></p>
+  <h1>Descargar desde YouTube, TikTok o Spotify</h1>
+  <form id="downloadForm">
+    <input type="url" id="url" placeholder="Pega el enlace aquí" required>
+    <select id="plataforma">
+      <option value="youtube">YouTube / TikTok</option>
+      <option value="spotify">Spotify</option>
+    </select>
+    <button type="submit">Descargar</button>
+    <p class="status" id="status"></p>
+  </form>
 
   <script>
-    function enviar() {
-      const url = document.getElementById('url').value;
-      const estado = document.getElementById('estado');
-      estado.innerText = 'Enviando...';
+    const form = document.getElementById('downloadForm');
+    const status = document.getElementById('status');
 
-      // Cambia la URL local por la URL de tu servidor en la nube
-      fetch('https://ssscatu.onrender.com/download', {  // Cambia esta URL por tu URL de servidor en la nube
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ url })
-      })
-      .then(res => res.json())
-      .then(data => {
-        estado.innerText = data.success || data.error;
-      })
-      .catch(err => {
-        estado.innerText = 'Error de red o conexión';
-      });
-    }
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const url = document.getElementById('url').value;
+      const plataforma = document.getElementById('plataforma').value;
+
+      status.textContent = 'Procesando...';
+
+      try {
+        const response = await fetch('/descarga', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, plataforma })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          status.textContent = data.mensaje || 'Descarga completada.';
+        } else {
+          status.textContent = data.error || 'Error al descargar.';
+        }
+      } catch (error) {
+        status.textContent = 'Error de conexión con el servidor.';
+      }
+    });
   </script>
 </body>
 </html>
