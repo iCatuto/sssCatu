@@ -1,26 +1,23 @@
 from flask import Flask, request, jsonify, send_file, render_template_string
-from flask_cors import CORS
-import os
 import subprocess
+import os
 import uuid
 
 app = Flask(__name__)
-CORS(app)
 
+# Carpeta segura de descargas dentro del entorno de Render
+DOWNLOAD_DIR = "downloads"
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
+# HTML simple para probar la app
 HTML = """
 <!doctype html>
 <html>
-  <head>
-    <title>Descargador</title>
-  </head>
+  <head><title>Descargar Multimedia</title></head>
   <body>
-    <h1>Descargar Video o Música</h1>
-    <form action="/descarga" method="post">
-      <input type="text" name="url" placeholder="URL del video o canción" required>
-      <select name="tipo">
-        <option value="video">Video (yt-dlp)</option>
-        <option value="musica">Música (Spotify - spotDL)</option>
-      </select>
+    <h1>Descargar TikTok / YouTube / Spotify</h1>
+    <form method="post" action="/descarga">
+      <input name="url" type="text" placeholder="Enlace..." required>
       <button type="submit">Descargar</button>
     </form>
   </body>
@@ -28,45 +25,40 @@ HTML = """
 """
 
 @app.route("/")
-def inicio():
+def index():
     return render_template_string(HTML)
 
 @app.route("/descarga", methods=["POST"])
 def descarga():
     url = request.form.get("url")
-    tipo = request.form.get("tipo", "video")
-
     if not url:
         return jsonify({"error": "Falta la URL"}), 400
 
-    carpeta = os.path.join(os.getcwd(), "descargas")
-    os.makedirs(carpeta, exist_ok=True)
-
     filename = str(uuid.uuid4())
+    output_path = os.path.join(DOWNLOAD_DIR, filename)
+
+    # Detecta si es Spotify
+    if "spotify.com" in url:
+        cmd = ["spotdl", "--path-template", output_path, url]
+    else:
+        cmd = ["yt-dlp", "-o", f"{output_path}.%(ext)s", url]
 
     try:
-        if tipo == "video":
-            output = os.path.join(carpeta, f"{filename}.%(ext)s")
-            cmd = ["yt-dlp", "-o", output, url]
-        elif tipo == "musica":
-            cmd = ["spotdl", "--output", carpeta, url]
-        else:
-            return jsonify({"error": "Tipo inválido"}), 400
-
-        result = subprocess.run(cmd, capture_output=True, text=True)
-
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         if result.returncode != 0:
-            return jsonify({"error": result.stderr}), 500
+            return jsonify({'error': result.stderr}), 500
 
-        archivos = os.listdir(carpeta)
-        archivos.sort(key=lambda x: os.path.getmtime(os.path.join(carpeta, x)), reverse=True)
-        ultimo = archivos[0]
-        ruta_completa = os.path.join(carpeta, ultimo)
+        # Encuentra archivo descargado
+        for fname in os.listdir(DOWNLOAD_DIR):
+            if fname.startswith(filename):
+                return send_file(os.path.join(DOWNLOAD_DIR, fname), as_attachment=True)
 
-        return send_file(ruta_completa, as_attachment=True)
+        return jsonify({'error': 'Archivo no encontrado'}), 404
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
 
+# Configurar el puerto para Render
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
