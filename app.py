@@ -1,91 +1,60 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import spotdl
+import subprocess
 import os
+import yt_dlp
 
 app = Flask(__name__)
 CORS(app)
 
+DOWNLOAD_DIR = "downloads"
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
 @app.route('/')
-def inicio():
+def home():
     return '''
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-      <meta charset="UTF-8">
-      <title>ssscatu - Spotify Download</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          padding: 20px;
-          background: #f4f4f4;
-          text-align: center;
-        }
-        h1 {
-          margin-bottom: 30px;
-        }
-        input, button {
-          font-size: 16px;
-          padding: 10px;
-          margin-top: 10px;
-          width: 100%;
-          max-width: 400px;
-        }
-        #estado {
-          margin-top: 20px;
-          font-weight: bold;
-        }
-      </style>
-    </head>
-    <body>
-      <h1>ssscatu - Descargar desde Spotify</h1>
-      <input type="text" id="url" placeholder="Pega el enlace de la canción de Spotify aquí">
-      <button onclick="enviar()">Enviar al servidor</button>
-      <p id="estado"></p>
-
-      <script>
-        function enviar() {
-          const url = document.getElementById('url').value;
-          const estado = document.getElementById('estado');
-          estado.innerText = 'Enviando...';
-
-          fetch('/download', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ url })
-          })
-          .then(res => res.json())
-          .then(data => {
-            estado.innerText = data.success || data.error;
-          })
-          .catch(err => {
-            estado.innerText = 'Error de red o conexión';
-          });
-        }
-      </script>
-    </body>
-    </html>
+    <h1>ssscatu</h1>
+    <form method="POST" action="/descargar" enctype="application/x-www-form-urlencoded">
+        <input name="url" placeholder="URL de video o canción" required>
+        <select name="tipo">
+            <option value="video">Video</option>
+            <option value="spotify">Spotify</option>
+        </select>
+        <button type="submit">Descargar</button>
+    </form>
     '''
 
-@app.route('/download', methods=['POST'])
-def download():
-    url = request.json.get('url')
-    if not url:
-        return jsonify({'error': 'No se proporcionó URL'}), 400
+@app.route('/descargar', methods=['POST'])
+def descargar():
+    url = request.form.get("url")
+    tipo = request.form.get("tipo")
 
-    carpeta = "descargas/spotify"
-    os.makedirs(carpeta, exist_ok=True)
+    if not url or not tipo:
+        return jsonify({'error': 'Faltan datos'}), 400
 
     try:
-        # Utiliza spotdl para descargar la canción de Spotify
-        song = spotdl.SpotDL(url)
-        song.download(carpeta)
+        if tipo == "video":
+            opciones = {
+                'outtmpl': os.path.join(DOWNLOAD_DIR, '%(title)s.%(ext)s'),
+                'format': 'mp4',
+            }
+            with yt_dlp.YoutubeDL(opciones) as ydl:
+                info = ydl.extract_info(url, download=True)
+                filename = ydl.prepare_filename(info)
+            return jsonify({'success': f'Video descargado: {filename}'})
 
-        return jsonify({'success': f'Canción descargada en: {carpeta}'})
+        elif tipo == "spotify":
+            comando = ["spotdl", url, "--output", DOWNLOAD_DIR]
+            resultado = subprocess.run(comando, capture_output=True, text=True)
+            if resultado.returncode == 0:
+                return jsonify({'success': 'Canción descargada con SpotDL'})
+            else:
+                return jsonify({'error': f'Error en SpotDL: {resultado.stderr}'})
+        else:
+            return jsonify({'error': 'Tipo no reconocido'}), 400
+
     except Exception as e:
         return jsonify({'error': f'Error al descargar: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host="0.0.0.0", port=5000)
