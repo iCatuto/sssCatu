@@ -27,14 +27,18 @@ def descarga():
         os.remove(os.path.join(DOWNLOAD_FOLDER, f))
 
     try:
+        cookies_path = os.path.join(os.getcwd(), 'cookies.txt')
+
         if formato == 'audio':
             cmd = [
-                'yt-dlp', '-x', '--audio-format', 'mp3',
+                'yt-dlp', '--cookies', cookies_path,
+                '-x', '--audio-format', 'mp3',
                 '-o', os.path.join(DOWNLOAD_FOLDER, '%(title)s.%(ext)s'), url
             ]
         else:
             cmd = [
-                'yt-dlp', '-f', 'mp4',
+                'yt-dlp', '--cookies', cookies_path,
+                '-f', 'mp4',
                 '-o', os.path.join(DOWNLOAD_FOLDER, '%(title)s.%(ext)s'), url
             ]
 
