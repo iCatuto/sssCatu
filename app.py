@@ -1,51 +1,42 @@
-from flask import Flask, request, jsonify
 import os
 import subprocess
 import uuid
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
-@app.route("/")
-def inicio():
-    return "Servidor Flask para descargas funcionando."
+# Ruta a la carpeta de descargas
+DOWNLOAD_FOLDER = os.path.join(os.getcwd(), 'storage')
+os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
-@app.route("/descarga", methods=["POST"])
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/descarga', methods=['POST'])
 def descarga():
+    data = request.get_json()
+    url = data.get('url')
+
+    if not url:
+        return jsonify({'error': 'No se proporcionó una URL'}), 400
+
+    filename = f"{uuid.uuid4()}"
+    output_path = os.path.join(DOWNLOAD_FOLDER, f"{filename}.%(ext)s")
+
     try:
-        url = request.json.get("url")
-        if not url:
-            return jsonify({"error": "URL no proporcionada"}), 400
-
-        carpeta = os.path.join("downloads", str(uuid.uuid4()))
-        os.makedirs(carpeta, exist_ok=True)
-
-        if "spotify.com" in url:
-            command = [
-                "spotdl",
-                url,
-                "--output", os.path.join(carpeta, "%(title)s.%(ext)s")
-            ]
+        if 'spotify.com' in url:
+            cmd = ['spotdl', 'download', url, '--output', DOWNLOAD_FOLDER]
         else:
-            command = [
-                "yt-dlp",
-                "-o", os.path.join(carpeta, "%(title)s.%(ext)s"),
-                url
-            ]
+            cmd = ['yt-dlp', '-o', output_path, url]
 
-        result = subprocess.run(command, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True)
 
-        if result.returncode == 0:
-            archivos = os.listdir(carpeta)
-            return jsonify({
-                "mensaje": "Descarga exitosa",
-                "archivos": archivos
-            })
-        else:
-            return jsonify({"error": result.stderr}), 500
+        if result.returncode != 0:
+            return jsonify({'error': result.stderr}), 500
 
+        return jsonify({'mensaje': 'Descarga completada.'})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(debug=True, host="0.0.0.0", port=port)
+        return jsonify({'error': str(e)}), 500
