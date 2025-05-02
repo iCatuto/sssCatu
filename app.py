@@ -1,52 +1,68 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 from flask_cors import CORS
+import spotdl
 import os
-import yt_dlp
-import uuid
 
 app = Flask(__name__)
 CORS(app)
 
-DOWNLOAD_FOLDER = 'downloads'
-os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
-
 @app.route('/')
-def index():
+def inicio():
     return '''
     <!DOCTYPE html>
     <html lang="es">
     <head>
       <meta charset="UTF-8">
-      <title>ssscatu</title>
+      <title>ssscatu - Spotify Download</title>
       <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; background: #f0f0f0; }
-        input, button { padding: 10px; font-size: 16px; width: 90%; max-width: 400px; margin: 10px 0; }
+        body {
+          font-family: Arial, sans-serif;
+          padding: 20px;
+          background: #f4f4f4;
+          text-align: center;
+        }
+        h1 {
+          margin-bottom: 30px;
+        }
+        input, button {
+          font-size: 16px;
+          padding: 10px;
+          margin-top: 10px;
+          width: 100%;
+          max-width: 400px;
+        }
+        #estado {
+          margin-top: 20px;
+          font-weight: bold;
+        }
       </style>
     </head>
     <body>
-      <h1>Descargar video</h1>
-      <input type="text" id="url" placeholder="Enlace del video">
-      <button onclick="enviar()">Descargar</button>
+      <h1>ssscatu - Descargar desde Spotify</h1>
+      <input type="text" id="url" placeholder="Pega el enlace de la canción de Spotify aquí">
+      <button onclick="enviar()">Enviar al servidor</button>
       <p id="estado"></p>
+
       <script>
         function enviar() {
           const url = document.getElementById('url').value;
           const estado = document.getElementById('estado');
           estado.innerText = 'Enviando...';
+
           fetch('/download', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ url })
           })
           .then(res => res.json())
           .then(data => {
-            if (data.link) {
-              estado.innerHTML = 'Video descargado: <a href="' + data.link + '" target="_blank">Descargar aquí</a>';
-            } else {
-              estado.innerText = data.error;
-            }
+            estado.innerText = data.success || data.error;
           })
-          .catch(() => estado.innerText = 'Error de red o conexión');
+          .catch(err => {
+            estado.innerText = 'Error de red o conexión';
+          });
         }
       </script>
     </body>
@@ -54,29 +70,22 @@ def index():
     '''
 
 @app.route('/download', methods=['POST'])
-def download_video():
+def download():
     url = request.json.get('url')
     if not url:
-        return jsonify({'error': 'URL no proporcionada'}), 400
+        return jsonify({'error': 'No se proporcionó URL'}), 400
 
-    unique_id = str(uuid.uuid4())
-    filepath = os.path.join(DOWNLOAD_FOLDER, f"{unique_id}.mp4")
+    carpeta = "descargas/spotify"
+    os.makedirs(carpeta, exist_ok=True)
 
     try:
-        ydl_opts = {
-            'format': 'mp4',
-            'outtmpl': filepath,
-            'quiet': True
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-        return jsonify({'link': f'/video/{unique_id}.mp4'})
+        # Utiliza spotdl para descargar la canción de Spotify
+        song = spotdl.SpotDL(url)
+        song.download(carpeta)
+
+        return jsonify({'success': f'Canción descargada en: {carpeta}'})
     except Exception as e:
         return jsonify({'error': f'Error al descargar: {str(e)}'}), 500
-
-@app.route('/video/<filename>')
-def serve_video(filename):
-    return send_from_directory(DOWNLOAD_FOLDER, filename, as_attachment=True)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
