@@ -17,17 +17,17 @@ def index():
 
 @app.route('/descarga', methods=['POST'])
 def descarga():
-    data = request.get_json()
-    url = data.get('url')
+    url = request.form.get('url')
+    tipo = request.form.get('tipo')
 
-    if not url:
-        return jsonify({'error': 'No se proporcionó una URL'}), 400
+    if not url or not tipo:
+        return jsonify({'error': 'Faltan datos'}), 400
 
-    filename = f"{uuid.uuid4()}"
+    filename = str(uuid.uuid4())
     output_path = os.path.join(DOWNLOAD_FOLDER, f"{filename}.%(ext)s")
 
     try:
-        if 'spotify.com' in url:
+        if tipo == 'musica':
             cmd = ['spotdl', 'download', url, '--output', DOWNLOAD_FOLDER]
         else:
             cmd = ['yt-dlp', '-o', output_path, url]
@@ -37,8 +37,10 @@ def descarga():
         if result.returncode != 0:
             return jsonify({'error': result.stderr}), 500
 
-        return jsonify({'mensaje': 'Descarga completada.'})
+        return jsonify({'mensaje': 'Descarga completada'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
