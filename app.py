@@ -19,20 +19,17 @@ def index():
 @app.route('/descarga', methods=['POST'])
 def descarga():
     url = request.form.get('url')
-    tipo = request.form.get('tipo')
 
-    if not url or not tipo:
-        return jsonify({'error': 'Faltan datos'}), 400
+    if not url:
+        return jsonify({'error': 'Falta la URL'}), 400
 
     try:
         # Limpiar carpeta antes de cada descarga
         for f in os.listdir(DOWNLOAD_FOLDER):
             os.remove(os.path.join(DOWNLOAD_FOLDER, f))
 
-        if tipo == 'musica':
-            cmd = ['spotdl', url, '--output', DOWNLOAD_FOLDER]
-        else:
-            cmd = ['yt-dlp', '-P', DOWNLOAD_FOLDER, url]
+        # Descargar el contenido (Spotify o video) con yt-dlp
+        cmd = ['yt-dlp', '-P', DOWNLOAD_FOLDER, url]
 
         result = subprocess.run(cmd, capture_output=True, text=True)
 
