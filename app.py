@@ -1,15 +1,14 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
-import subprocess
 import yt_dlp
-import uuid
+import spotdl
 
 app = Flask(__name__)
 CORS(app)
 
 @app.route('/')
-def index():
+def inicio():
     return '''
     <!DOCTYPE html>
     <html lang="es">
@@ -23,10 +22,13 @@ def index():
           background: #f4f4f4;
           text-align: center;
         }
+        h1 {
+          margin-bottom: 30px;
+        }
         input, button {
           font-size: 16px;
           padding: 10px;
-          margin: 10px auto;
+          margin-top: 10px;
           width: 100%;
           max-width: 400px;
         }
@@ -38,8 +40,8 @@ def index():
     </head>
     <body>
       <h1>ssscatu</h1>
-      <input type="text" id="url" placeholder="Pega el enlace aquí">
-      <button onclick="enviar()">Descargar</button>
+      <input type="text" id="url" placeholder="Pega el enlace del video o canción aquí">
+      <button onclick="enviar()">Enviar al servidor</button>
       <p id="estado"></p>
 
       <script>
@@ -50,14 +52,16 @@ def index():
 
           fetch('/download', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ url })
           })
           .then(res => res.json())
           .then(data => {
             estado.innerText = data.success || data.error;
           })
-          .catch(() => {
+          .catch(err => {
             estado.innerText = 'Error de red o conexión';
           });
         }
@@ -72,15 +76,33 @@ def download():
     if not url:
         return jsonify({'error': 'No se proporcionó URL'}), 400
 
-    download_dir = os.path.join("/tmp", "downloads", str(uuid.uuid4()))
-    os.makedirs(download_dir, exist_ok=True)
+    carpeta = "/storage/ssscatu"
+    os.makedirs(carpeta, exist_ok=True)
 
     try:
-        if "spotify.com" in url:
-            result = subprocess.run(
-                ["spotdl", url, "--output", download_dir],
-                capture_output=True,
-                text=True
-            )
-            if result.returncode != 0:
-                return jsonify({'error': result.stderr}),
+        # Verificar si es un enlace de YouTube o Spotify
+        if "youtube.com" in url or "youtu.be" in url:
+            ydl_opts = {
+                'outtmpl': os.path.join(carpeta, '%(title)s.%(ext)s'),
+                'format': 'mp4',
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                filename = ydl.prepare_filename(info)
+
+            return jsonify({'success': f'Video descargado: {filename}'})
+        
+        elif "spotify.com" in url:
+            # Implementar SpotDL
+            spotdl_cli = spotdl.Spotdl()
+            spotdl_cli.download(url, output_path=carpeta)
+            return jsonify({'success': 'Canción de Spotify descargada exitosamente'})
+
+        else:
+            return jsonify({'error': 'URL no soportada'}), 400
+
+    except Exception as e:
+        return jsonify({'error': f'Error al descargar: {str(e)}'}), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
