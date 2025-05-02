@@ -2,40 +2,124 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Descargador Universal</title>
+  <title>sssCatuto</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 30px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      width: 80%;
+      max-width: 400px;
+      border-radius: 8px;
+      border: none;
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+    button {
+      display: block;
+      margin: 10px auto;
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      background-color: #8e44ad;
+      cursor: pointer;
+      width: 80%;
+      max-width: 300px;
+    }
+    button:hover {
+      background-color: #732d91;
+    }
+    .footer {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #bbb;
+    }
+    .info {
+      background-color: #1e1e1e;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 40px auto 20px;
+      max-width: 600px;
+      color: #ccc;
+      font-size: 15px;
+    }
+    ul {
+      text-align: left;
+      display: inline-block;
+      margin: 10px 0 0;
+      padding-left: 20px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Descargar desde múltiples plataformas</h1>
+  <h1>sssCatuto</h1>
+
   <form id="formulario" method="POST">
-    <input type="text" name="url" placeholder="Pega el enlace aquí" required><br><br>
-    <label>
-      <input type="radio" name="formato" value="video" checked> Video (mp4)
-    </label>
-    <label>
-      <input type="radio" name="formato" value="audio"> Audio (mp3)
-    </label><br><br>
-    <button type="submit">Descargar</button>
+    <input type="text" name="url" placeholder="Pega el enlace aquí" required><br>
+    <button type="submit" name="formato" value="video">Descargar video (yt-dlp)</button>
+    <button type="submit" name="formato" value="audio">Descargar música (YouTube a MP3)</button>
   </form>
 
-  <script>
-    document.getElementById("formulario").addEventListener("submit", async function (e) {
-      e.preventDefault();
-      const form = new FormData(this);
-      const response = await fetch('/descarga', {
-        method: 'POST',
-        body: form
-      });
+  <p id="error" style="color:red;"></p>
 
-      if (response.ok) {
-        const blob = await response.blob();
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = "archivo";
-        link.click();
-      } else {
-        const error = await response.json();
-        alert("Error: " + error.error);
-      }
+  <div class="info">
+    <strong>Plataformas compatibles:</strong>
+    <ul>
+      <li>YouTube (video y música)</li>
+      <li>TikTok</li>
+      <li>Facebook</li>
+      <li>Twitter/X</li>
+      <li>Instagram (reels y videos)</li>
+      <li>SoundCloud</li>
+      <li>Mixcloud</li>
+      <li>Bilibili</li>
+      <li>Reddit</li>
+      <li>Y muchos más...</li>
+    </ul>
+    <p>Solo pega el enlace y elige si quieres descargar video o solo la música.</p>
+  </div>
+
+  <div class="footer">hecho por Catuto🔥</div>
+
+  <script>
+    document.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", async function (e) {
+        e.preventDefault();
+        const url = document.querySelector('input[name="url"]').value;
+        const formato = this.value;
+
+        const form = new FormData();
+        form.append('url', url);
+        form.append('formato', formato);
+
+        try {
+          const res = await fetch('/descarga', {
+            method: 'POST',
+            body: form
+          });
+
+          if (!res.ok) {
+            const err = await res.json();
+            document.getElementById("error").textContent = "Error: " + err.error;
+            return;
+          }
+
+          const blob = await res.blob();
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = "archivo";
+          link.click();
+        } catch (err) {
+          document.getElementById("error").textContent = "Error de red o conexión";
+        }
+      });
     });
   </script>
 </body>
