@@ -1,5 +1,4 @@
-flask
-flask-cors
-yt-dlp
-spotdl
-ffmpeg-python
+Flask==2.3.2
+flask-cors==4.0.0
+yt-dlp==2024.04.09
+spotdl==4.2.1
