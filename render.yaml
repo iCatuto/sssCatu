@@ -2,6 +2,7 @@ type: web
 name: sssCatu
 env: python
 buildCommand: |
+  pip install --upgrade pip
   pip install -r requirements.txt
   pip install spotdl==4.2.0
 startCommand: python app.py
