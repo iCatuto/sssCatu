@@ -30,17 +30,23 @@ def descarga():
         cookies_path = os.path.join(os.getcwd(), 'cookies.txt')
 
         if formato == 'audio':
-            cmd = [
-                'yt-dlp', '--cookies', cookies_path,
-                '-x', '--audio-format', 'mp3',
-                '-o', os.path.join(DOWNLOAD_FOLDER, '%(title)s.%(ext)s'), url
-            ]
-        else:
-            cmd = [
-                'yt-dlp', '--cookies', cookies_path,
-                '-f', 'mp4',
-                '-o', os.path.join(DOWNLOAD_FOLDER, '%(title)s.%(ext)s'), url
-            ]
+    cmd = [
+        'yt-dlp',
+        '--cookies', cookies_path,
+        '--restrict-filenames',
+        '-x', '--audio-format', 'mp3',
+        '-o', os.path.join(DOWNLOAD_FOLDER, '%(id)s.%(ext)s'),
+        url
+    ]
+else:
+    cmd = [
+        'yt-dlp',
+        '--cookies', cookies_path,
+        '--restrict-filenames',
+        '-f', 'mp4',
+        '-o', os.path.join(DOWNLOAD_FOLDER, '%(id)s.%(ext)s'),
+        url
+    ]
 
         result = subprocess.run(cmd, capture_output=True, text=True)
 
