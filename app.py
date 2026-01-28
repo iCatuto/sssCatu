@@ -17,12 +17,11 @@ def index():
 @app.route('/descarga', methods=['POST'])
 def descarga():
     url = request.form.get('url')
-    formato = request.form.get('formato')  # 'video' o 'audio'
+    formato = request.form.get('formato')
 
     if not url or not formato:
         return jsonify({'error': 'Faltan datos'}), 400
 
-    # Limpiar carpeta
     for f in os.listdir(DOWNLOAD_FOLDER):
         os.remove(os.path.join(DOWNLOAD_FOLDER, f))
 
@@ -30,23 +29,23 @@ def descarga():
         cookies_path = os.path.join(os.getcwd(), 'cookies.txt')
 
         if formato == 'audio':
-    cmd = [
-        'yt-dlp',
-        '--cookies', cookies_path,
-        '--restrict-filenames',
-        '-x', '--audio-format', 'mp3',
-        '-o', os.path.join(DOWNLOAD_FOLDER, '%(id)s.%(ext)s'),
-        url
-    ]
-else:
-    cmd = [
-        'yt-dlp',
-        '--cookies', cookies_path,
-        '--restrict-filenames',
-        '-f', 'mp4',
-        '-o', os.path.join(DOWNLOAD_FOLDER, '%(id)s.%(ext)s'),
-        url
-    ]
+            cmd = [
+                'yt-dlp',
+                '--cookies', cookies_path,
+                '--restrict-filenames',
+                '-x', '--audio-format', 'mp3',
+                '-o', os.path.join(DOWNLOAD_FOLDER, '%(id)s.%(ext)s'),
+                url
+            ]
+        else:
+            cmd = [
+                'yt-dlp',
+                '--cookies', cookies_path,
+                '--restrict-filenames',
+                '-f', 'mp4',
+                '-o', os.path.join(DOWNLOAD_FOLDER, '%(id)s.%(ext)s'),
+                url
+            ]
 
         result = subprocess.run(cmd, capture_output=True, text=True)
 
@@ -61,7 +60,3 @@ else:
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
